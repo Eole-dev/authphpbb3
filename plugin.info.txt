@@ -4,4 +4,4 @@ email  eole.dev@outlook.com
 date   2016-06-27
 name   phpBB 3.x SSO & Authentication Plugin
 desc   Provides user authentication using phpBB 3.x backend
-url    http://www.dokuwiki.org/plugin:authphpbb3
+url    https://www.dokuwiki.org/plugin:authphpbb3
