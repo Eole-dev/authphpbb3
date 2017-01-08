@@ -7,7 +7,7 @@
 */
 
 $lang['config_error']       = 'Erreur de configuration: contactez un administrateur.';
-$lang['database_error']     = 'erreur dans la base de données: contactez un administrateur.';
+$lang['database_error']     = 'Erreur dans la base de données: contactez un administrateur.';
 $lang['login_login']        = 'Nom d\'utilisateur';
 $lang['login_password']     = 'Mot de passe';
 $lang['login_remember']     = 'Se souvenir de moi';

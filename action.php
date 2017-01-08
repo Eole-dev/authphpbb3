@@ -6,7 +6,7 @@
 * @author   Eole <eole.dev@outlook.com>
 */
 
-if (!defined('DOKU_INC') || !defined('DOKU_URL')) {
+if (!defined('DOKU_INC')) {
     die();
 }
 
@@ -33,20 +33,27 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
     */
     public function handle_login_form(&$event, $param) {
         global $auth;
-        $url = $this->getConf('phpbb_root_path');
+        global $ID;
+        $inline_css1 = '';
+        $inline_css2 = '';
+        $phpbb_url = '';
         $cache = null;
         $elem = '';
         $pos = 0;
 
-        if (empty($url)) {
+        $phpbb_url = $auth->get_phpbb_url();
+        if ($phpbb_url === false) {
             return ;
         }
-        $url = rtrim($url, '/') . '/ucp.php?mode=login';
+        $phpbb_url = rtrim($phpbb_url, '/');
         // Form's PHP script.
-        $event->data->params['action'] = $url;
+        $event->data->params['action'] = $phpbb_url . '/ucp.php?mode=login';
         // Username field.
-        $elem = '<label class="block" for="username"><span style="padding-right:10px">' . $this->getLang('login_login') .
-                '</span><input type="text" tabindex="1" name="username" id="username" value="" class="edit"></label><br/>';
+        $inline_css1 = ' style="padding-right:10px"';
+        $elem = '<label class="block" for="username">' .
+                    '<span' . $inline_css1 . '>' . $this->getLang('login_login') . '</span>' .
+                    '<input type="text" tabindex="1" name="username" id="username" value="" class="edit">' .
+                '</label><br/>';
         $pos = $event->data->findElementByAttribute('name', 'u');
         if ($pos === false) {
             return ;
@@ -54,8 +61,11 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // Password field.
-        $elem = '<label class="block" for="password"><span style="padding-right:10px">' . $this->getLang('login_password') .
-                '</span><input type="password" tabindex="2" id="password" name="password" autocomplete="off" class="edit"></label><br/>';
+        $inline_css1 = ' style="padding-right:10px"';
+        $elem = '<label class="block" for="password">' .
+                    '<span' . $inline_css1 . '>' . $this->getLang('login_password') . '</span>' .
+                    '<input type="password" tabindex="2" id="password" name="password" autocomplete="off" class="edit">' .
+                '</label><br/>';
         $pos = $event->data->findElementByAttribute('name', 'p');
         if ($pos === false) {
             return ;
@@ -63,9 +73,12 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // Remember me check box.
-        $elem = '<label class="simple" style="margin-left:20%;" for="autologin">' .
-                '<input type="checkbox" name="autologin" id="autologin" tabindex="3">' .
-                '<span style="padding-left:5px">' . $this->getLang('login_remember') . '</span></label>';
+        $inline_css1 = ' style="margin-left:20%;"';
+        $inline_css2 = ' style="padding-left:5px"';
+        $elem = '<label class="simple"' . $inline_css1 . ' for="autologin">' .
+                    '<input type="checkbox" name="autologin" id="autologin" tabindex="3">' .
+                    '<span' . $inline_css2 . '>' . $this->getLang('login_remember') . '</span>' .
+                '</label>';
         $pos = $event->data->findElementByAttribute('name', 'r');
         if ($pos === false) {
             return ;
@@ -73,13 +86,17 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // View online check box.
-        $elem = '<label class="simple" style="margin-left:20%;margin-bottom:10px;" for="viewonline">' .
-                '<input type="checkbox" name="viewonline" id="viewonline" tabindex="4">' .
-                '<span style="padding-left:5px">' . $this->getLang('login_viewonline') . '</span></label>';
+        $inline_css1 = ' style="margin-left:20%;margin-bottom:10px;"';
+        $inline_css2 = ' style="padding-left:5px"';
+        $elem = '<label class="simple"' . $inline_css1 . ' for="viewonline">' .
+                    '<input type="checkbox" name="viewonline" id="viewonline" tabindex="4">' .
+                    '<span' . $inline_css2 . '>' . $this->getLang('login_viewonline') . '</span>' .
+                '</label>';
         $event->data->insertElement($pos + 1, $elem);
         // Log in button.
         $elem = '<button type="submit" name="login" tabindex="5" value="' . $this->getLang('login_button') . '">' .
-                $this->getLang('login_button') . '</button>';
+                    $this->getLang('login_button') .
+                '</button>';
         $pos = $event->data->findElementByType('button');
         if ($pos === false) {
             return ;
@@ -87,13 +104,10 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // Hidden field for redirection.
-        $elem = '<input type="hidden" name="redirect" value="' . DOKU_URL . '">';
+        $elem = '<input type="hidden" name="redirect" value="' . wl($ID, '', true) . '">';
         $event->data->insertElement($pos - 1, $elem);
         // Forum URL.
-        $url = $auth->get_phpbb_url();
-        if ($url !== false) {
-            $event->data->addElement('<p>' . sprintf($this->getLang('login_bottom_text'), $url) . '</p>');
-        }
+        $event->data->addElement('<p>' . sprintf($this->getLang('login_bottom_text'), $phpbb_url) . '</p>');
     }
 
     /**

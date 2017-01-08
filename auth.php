@@ -107,7 +107,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         dbglog($msg); 
     }
 
-        /**
+    /**
     * Sanitizes a given username.
     *
     * @param    string  $username   Username to clean.
@@ -290,7 +290,11 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             }
         }
         if (!empty($this->_phpbb_user_session_id) && ($this->get_phpbb_url() !== false) && $this->_phpbb_user_id) {
+            //global $ID;
+
             $url = $this->_phpbb_conf['url'] . '/ucp.php?mode=logout&sid=' . $this->_phpbb_user_session_id;
+            // phpBB doesn't natively support the logout redirection yet.
+            //$url .= '&redirect=' . urlencode(wl($ID, '', true));
             send_redirect($url);
         }
     }
