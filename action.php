@@ -1,39 +1,40 @@
 <?php
 /**
-* Action Plugin for authphpbb3.
-*
-* @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
-* @author   Eole <eole.dev@outlook.com>
-*/
+ * Action Plugin for authphpbb3.
+ *
+ * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author   Eole <eole.dev@outlook.com>
+ */
 
 if (!defined('DOKU_INC')) {
     die();
 }
 
 /**
-* Action class for authphpbb3 plugin.
-*/
+ * Action class for authphpbb3 plugin.
+ */
 class action_plugin_authphpbb3 extends DokuWiki_Plugin {
 
     /**
-    * Registers a callback function for a given event.
-    *
-    * @param Doku_Event_Handler $controller.
-    */
+     * Registers a callback function for a given event.
+     *
+     * @param Doku_Event_Handler $controller.
+     */
     public function register(Doku_Event_Handler $controller) {
         $controller->register_hook('HTML_LOGINFORM_OUTPUT', 'BEFORE', $this, 'handle_login_form');
         $controller->register_hook('COMMON_USER_LINK', 'AFTER', $this, 'handle_user_link');
     }
 
     /**
-    * Replaces the DokuWiki form by the phpBB login form.
-    *
-    * @param Doku_Event    $event    Event.
-    * @param object        $param    Parameters.
-    */
+     * Replaces the DokuWiki form by the phpBB login form.
+     *
+     * @param Doku_Event    $event    Event.
+     * @param object        $param    Parameters.
+     */
     public function handle_login_form(&$event, $param) {
         global $auth;
         global $ID;
+        $use_inline_css = true;
         $inline_css1 = '';
         $inline_css2 = '';
         $phpbb_url = '';
@@ -49,7 +50,7 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         // Form's PHP script.
         $event->data->params['action'] = $phpbb_url . '/ucp.php?mode=login';
         // Username field.
-        $inline_css1 = ' style="padding-right:10px"';
+        $inline_css1 = ($use_inline_css ? ' style="padding-right:10px"' : '');
         $elem = '<label class="block" for="username">' .
                     '<span' . $inline_css1 . '>' . $this->getLang('login_login') . '</span>' .
                     '<input type="text" tabindex="1" name="username" id="username" value="" class="edit">' .
@@ -61,7 +62,7 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // Password field.
-        $inline_css1 = ' style="padding-right:10px"';
+        $inline_css1 = ($use_inline_css ? ' style="padding-right:10px"' : '');
         $elem = '<label class="block" for="password">' .
                     '<span' . $inline_css1 . '>' . $this->getLang('login_password') . '</span>' .
                     '<input type="password" tabindex="2" id="password" name="password" autocomplete="off" class="edit">' .
@@ -73,8 +74,8 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // Remember me check box.
-        $inline_css1 = ' style="margin-left:20%;"';
-        $inline_css2 = ' style="padding-left:5px"';
+        $inline_css1 = ($use_inline_css ? ' style="margin-left:20%;"' : '');
+        $inline_css2 = ($use_inline_css ? ' style="padding-left:5px"' : '');
         $elem = '<label class="simple"' . $inline_css1 . ' for="autologin">' .
                     '<input type="checkbox" name="autologin" id="autologin" tabindex="3">' .
                     '<span' . $inline_css2 . '>' . $this->getLang('login_remember') . '</span>' .
@@ -86,8 +87,8 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->replaceElement($pos, null);
         $event->data->insertElement($pos, $elem);
         // View online check box.
-        $inline_css1 = ' style="margin-left:20%;margin-bottom:10px;"';
-        $inline_css2 = ' style="padding-left:5px"';
+        $inline_css1 = ($use_inline_css ? ' style="margin-left:20%;margin-bottom:10px;"' : '');
+        $inline_css2 = ($use_inline_css ? ' style="padding-left:5px"' : '');
         $elem = '<label class="simple"' . $inline_css1 . ' for="viewonline">' .
                     '<input type="checkbox" name="viewonline" id="viewonline" tabindex="4">' .
                     '<span' . $inline_css2 . '>' . $this->getLang('login_viewonline') . '</span>' .
@@ -111,11 +112,11 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
     }
 
     /**
-    * Adds a link to phpBB profile on all users' names.
-    *
-    * @param Doku_Event    $event    Event.
-    * @param object        $param    Parameters.
-    */
+     * Adds a link to phpBB profile on all users' names.
+     *
+     * @param Doku_Event    $event    Event.
+     * @param object        $param    Parameters.
+     */
     public function handle_user_link(&$event, $param) {
         global $auth, $conf;
         $profile = '<a href="%s" class="interwiki iw_user" rel="nofollow" target="_blank">%s</a>';

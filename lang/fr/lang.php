@@ -1,13 +1,13 @@
 <?php
 /**
-* French translation for the authphpbb3 plugin.
-*
-* @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
-* @author   Eole <eole.dev@outlook.com>
-*/
+ * French translation for the authphpbb3 plugin.
+ *
+ * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author   Eole <eole.dev@outlook.com>
+ */
 
-$lang['config_error']       = 'Erreur de configuration: contactez un administrateur.';
-$lang['database_error']     = 'Erreur dans la base de données: contactez un administrateur.';
+$lang['config_error']       = 'Erreur de configuration : contactez un administrateur.';
+$lang['database_error']     = 'Erreur dans la base de données : contactez un administrateur.';
 $lang['login_login']        = 'Nom d\'utilisateur';
 $lang['login_password']     = 'Mot de passe';
 $lang['login_remember']     = 'Se souvenir de moi';

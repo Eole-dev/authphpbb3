@@ -1,10 +1,10 @@
 <?php
 /**
-* German translation for the authphpbb3 plugin.
-*
-* @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
-* @author   Benjamin Vetter <mail@b-vetter.de>
-*/
+ * German translation for the authphpbb3 plugin.
+ *
+ * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author   Benjamin Vetter <mail@b-vetter.de>
+ */
 
 $lang['config_error']       = 'Konfigurations Fehler: Kontaktiere bitte einen Administrator.';
 $lang['database_error']     = 'Datenbank Fehler: Kontaktiere bitte einen Administrator.';

@@ -1,18 +1,18 @@
 <?php
 /**
-* Authentication Plugin for authphpbb3.
-*
-* @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
-* @author   Eole <eole.dev@outlook.com>
-*/
+ * Authentication Plugin for authphpbb3.
+ *
+ * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author   Eole <eole.dev@outlook.com>
+ */
 
 if (!defined('DOKU_INC')) {
     die();
 }
 
 /**
-* phpBB 3.x Authentication class.
-*/
+ * phpBB 3.x Authentication class.
+ */
 class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     // @var object    phpBB database connection.
     protected $_phpbb_sql_link = null;
@@ -61,8 +61,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     CONST CACHE_DURATION_UNIT = 86400; /* 3600 * 24 = 1 day */
 
     /**
-    * Constructor.
-    */
+     * Constructor.
+     */
     public function __construct() {
         parent::__construct();
         // Set capabilities accordingly.
@@ -86,18 +86,19 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Destructor.
-    */
+     * Destructor.
+     */
     public function __destruct() {
+        parent::__destruct();
         $this->phpbb_disconnect();
         $this->_cache = null;
     }
 
     /**
-    * Writes debug informations.
-    *
-    * @param    string  $msg    Message to write.
-    */
+     * Writes debug informations.
+     *
+     * @param    string  $msg    Message to write.
+     */
     public function dbglog($msg) {
         $class_name = @get_class($this);
 
@@ -108,11 +109,11 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Sanitizes a given username.
-    *
-    * @param    string  $username   Username to clean.
-    * @return   string              Clean username.
-    */
+     * Sanitizes a given username.
+     *
+     * @param    string  $username   Username to clean.
+     * @return   string              Clean username.
+     */
     public function clean_username($username) {
         $username = preg_replace('#(?:[\x00-\x1F\x7F]+|(?:\xC2[\x80-\x9F])+)#', '', $username);
         $username = preg_replace('# {2,}#', ' ', $username);
@@ -121,10 +122,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Gets phpBB URL.
-    *
-    * @return   string|false    phpBB URL if success, false otherwise.
-    */
+     * Gets phpBB URL.
+     *
+     * @return   string|false    phpBB URL if success, false otherwise.
+     */
     public function get_phpbb_url() {
         if (!empty($this->_phpbb_conf['url'])) {
             return $this->_phpbb_conf['url'];
@@ -182,13 +183,13 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Authenticates the user. Called on every page load.
-    *
-    * @param    string  $user   Case sensitive user name.
-    * @param    string  $pass   Plain text password for the user.
-    * @param    boolean $sticky Remember login?
-    * @return   boolean         True for match, false for everything else.
-    */
+     * Authenticates the user. Called on every page load.
+     *
+     * @param    string  $user   Case sensitive user name.
+     * @param    string  $pass   Plain text password for the user.
+     * @param    boolean $sticky Remember login?
+     * @return   boolean         True for match, false for everything else.
+     */
     public function trustExternal($user, $pass, $sticky = false) {
         global $USERINFO;
         $b = false;
@@ -214,18 +215,18 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Fetchs user details from phpBB3.
-    *
-    * @param    string          $user           Case sensitive username.
-    * @param    boolean         $requireGroups  Whether or not the returned data must include groups.
-    * @return   array/boolean                   False for error conditions and an array for success.
-    *                                           array['name']           string  User's name.
-    *                                           array['username']       string  User's name.
-    *                                           array['email']          string  User's email address.
-    *                                           array['phpbb_user_id']  string  User's ID.
-    *                                           array['phpbb_profile']  string  User's link to profile.
-    *                                           array['grps']           array   Group names the user belongs to.
-    */
+     * Fetchs user details from phpBB3.
+     *
+     * @param    string          $user           Case sensitive username.
+     * @param    boolean         $requireGroups  Whether or not the returned data must include groups.
+     * @return   array/boolean                   False for error conditions and an array for success.
+     *                                           array['name']           string  User's name.
+     *                                           array['username']       string  User's name.
+     *                                           array['email']          string  User's email address.
+     *                                           array['phpbb_user_id']  string  User's ID.
+     *                                           array['phpbb_profile']  string  User's link to profile.
+     *                                           array['grps']           array   Group names the user belongs to.
+     */
     public function getUserData($user, $requireGroups = true) {
         if (empty($user)) {
             return false;
@@ -276,9 +277,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Logs off the user.
-    */
+     * Logs off the user.
+     */
     public function logOff() {
+        parent::logOff();
         if (empty($this->_phpbb_user_session_id)) {
             $this->get_phpbb_cookie_name();
             if (empty($this->_phpbb_conf['cookie_name'])) {
@@ -300,10 +302,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Loads the plugin configuration.
-    *
-    * @return   boolean   True on success, false otherwise.
-    */
+     * Loads the plugin configuration.
+     *
+     * @return   boolean   True on success, false otherwise.
+     */
     private function load_configuration() {
         if ($this->use_phpbb_cache()) {
             $this->_phpbb_conf = unserialize($this->_cache->retrieveCache(false));
@@ -342,10 +344,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Gets the phpBB configuration cache.
-    *
-    * @return object    Cache of the phpBB configuration.
-    */
+     * Gets the phpBB configuration cache.
+     *
+     * @return object    Cache of the phpBB configuration.
+     */
     private function get_phpbb_cache() {
         if ($this->_cache === null) {
             $this->_cache = new cache('authphpbb3', $this->_cache_ext_name);
@@ -354,10 +356,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Can use the phpBB configuration cache.
-    *
-    * @return object    Cache of the phpBB configuration.
-    */
+     * Can use the phpBB configuration cache.
+     *
+     * @return object    Cache of the phpBB configuration.
+     */
     private function use_phpbb_cache() {
         $depends = array();
 
@@ -372,10 +374,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Connects to phpBB database.
-    *
-    * @return   boolean True on success, false otherwise.
-    */
+     * Connects to phpBB database.
+     *
+     * @return   boolean True on success, false otherwise.
+     */
     private function phpbb_connect() {
         if (!$this->_phpbb_sql_link) {
             $this->_phpbb_sql_link = new mysqli(
@@ -394,8 +396,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Disconnects from phpBB database.
-    */
+     * Disconnects from phpBB database.
+     */
     private function phpbb_disconnect() {
         if ($this->_phpbb_sql_link !== null) {
             $this->_phpbb_sql_link->close();
@@ -403,10 +405,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Gets phpBB cookie's name.
-    *
-    * @return   boolean True for success, false otherwise.
-    */
+     * Gets phpBB cookie's name.
+     *
+     * @return   boolean True for success, false otherwise.
+     */
     private function get_phpbb_cookie_name() {
         if (!empty($this->_phpbb_conf['cookie_name'])) {
             return true;
@@ -440,10 +442,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Gets phpBB user's groups.
-    *
-    * @return   boolean True for success, false otherwise.
-    */
+     * Gets phpBB user's groups.
+     *
+     * @return   boolean True for success, false otherwise.
+     */
     private function get_phpbb_user_groups() {
         $this->_phpbb_groups = array();
         $this->_phpbb_user_id = filter_var($this->_phpbb_user_id, FILTER_VALIDATE_INT);
@@ -475,10 +477,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-    * Authenticate the user using cookie. Called on every page load.
-    *
-    * @return   boolean True for success, false otherwise.
-    */
+     * Authenticate the user using cookie. Called on every page load.
+     *
+     * @return   boolean True for success, false otherwise.
+     */
     private function do_login_cookie() {
         if (!$this->phpbb_connect()) {
             return false;
@@ -491,7 +493,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $this->_phpbb_user_session_id = array_key_exists($phpbb_cookie_user_sid, $_COOKIE) ? $_COOKIE[$phpbb_cookie_user_sid] : null;
         $phpbb_cookie_user_id = array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
         if (empty($this->_phpbb_user_session_id) || !ctype_xdigit($this->_phpbb_user_session_id)) {
-            $this->dbglog('invalid SID in user\'s cookie.');
+            $this->dbglog('invalid ID or SID in user\'s cookie.');
             return false;
         }
         // Get session data from database.
@@ -549,4 +551,3 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         return true;
     }
 }
-?>

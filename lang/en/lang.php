@@ -1,10 +1,10 @@
 <?php
 /**
-* English translation for the authphpbb3 plugin.
-*
-* @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
-* @author   Eole <eole.dev@outlook.com>
-*/
+ * English translation for the authphpbb3 plugin.
+ *
+ * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author   Eole <eole.dev@outlook.com>
+ */
 
 $lang['config_error']       = 'Configuration error: contact an administrator.';
 $lang['database_error']     = 'Database error: contact an administrator.';
