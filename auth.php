@@ -64,7 +64,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      * Constructor.
      */
     public function __construct() {
-        parent::__construct();
+        if (method_exists(get_parent_class($this), '__construct')) {
+            parent::__construct();
+        }
         // Set capabilities accordingly.
         $this->cando['addUser']     = false;    // can Users be created?
         $this->cando['delUser']     = false;    // can Users be deleted?
@@ -89,9 +91,11 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      * Destructor.
      */
     public function __destruct() {
-        parent::__destruct();
         $this->phpbb_disconnect();
         $this->_cache = null;
+        if (method_exists(get_parent_class($this), '__destruct')) {
+            parent::__destruct();
+        }
     }
 
     /**
