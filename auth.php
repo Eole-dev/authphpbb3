@@ -14,27 +14,31 @@ if (!defined('DOKU_INC')) {
  * phpBB 3.x Authentication class.
  */
 class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
-    // @var object    phpBB database connection.
-    protected $_phpbb_sql_link = null;
-    // @var array    phpBB configuration (cached).
+    // @var object  phpBB database connection.
+    protected $_phpbb_db_link = null;
+    // @var array   phpBB configuration (cached).
     protected $_phpbb_conf = array(
-        // @var string    phpBB root path.
+        // @var string  phpBB root path.
         'root_path'     => '',
-        // @var string    phpBB URL.
+        // @var string  phpBB URL.
         'url'           => '',
-        // @var string     php extension.
+        // @var string  php extension.
         'phpEx'         => '',
-        // @var string    phpBB database's host.
+        // @var string  phpBB database's driver to use.
+        'dbms'          => '',
+        // @var string  phpBB database's host.
         'dbhost'        => '',
-        // @var string    phpBB database's name.
+        // @var string  phpBB database's port.
+        'dbport'        => '',
+        // @var string  phpBB database's name.
         'dbname'        => '',
-        // @var string    phpBB database's user.
+        // @var string  phpBB database's user.
         'dbuser'        => '',
-        // @var string    phpBB database's password.
+        // @var string  phpBB database's password.
         'dbpasswd'      => '',
-        // @var string    phpBB database's table prefix.
+        // @var string  phpBB database's table prefix.
         'table_prefix'  => '',
-        // @var string    phpBB cookie's name.
+        // @var string  phpBB cookie's name.
         'cookie_name'   => ''
     );
     // @var int     phpBB user ID.
@@ -57,8 +61,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     protected $_cache_duration = 0;
     // @var int     Cache extension file name.
     protected $_cache_ext_name = '.phpbb3cache';
-    // @var int     Cache unit constant.
-    CONST CACHE_DURATION_UNIT = 86400; /* 3600 * 24 = 1 day */
+    // @var int     Cache unit constant (in seconds).
+    CONST CACHE_DURATION_UNIT = 86400; /* 60 * 60 * 24 = 1 day */
 
     /**
      * Constructor.
@@ -68,22 +72,22 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             parent::__construct();
         }
         // Set capabilities accordingly.
-        $this->cando['addUser']     = false;    // can Users be created?
-        $this->cando['delUser']     = false;    // can Users be deleted?
-        $this->cando['modLogin']    = false;    // can login names be changed?
-        $this->cando['modPass']     = false;    // can passwords be changed?
-        $this->cando['modName']     = false;    // can real names be changed?
-        $this->cando['modMail']     = false;    // can emails be changed?
-        $this->cando['modGroups']   = false;    // can groups be changed?
-        $this->cando['getUsers']    = false;    // can a (filtered) list of users be retrieved?
-        $this->cando['getUserCount']= false;    // can the number of users be retrieved?
-        $this->cando['getGroups']   = false;    // can a list of available groups be retrieved?
-        $this->cando['external']    = true;     // does the module do external auth checking?
-        $this->cando['logout']      = true;     // can the user logout again?
+        $this->cando['addUser']     = false;    // Can Users be created?
+        $this->cando['delUser']     = false;    // Can Users be deleted?
+        $this->cando['modLogin']    = false;    // Can login names be changed?
+        $this->cando['modPass']     = false;    // Can passwords be changed?
+        $this->cando['modName']     = false;    // Can real names be changed?
+        $this->cando['modMail']     = false;    // Can emails be changed?
+        $this->cando['modGroups']   = false;    // Can groups be changed?
+        $this->cando['getUsers']    = false;    // Can a (filtered) list of users be retrieved?
+        $this->cando['getUserCount']= false;    // Can the number of users be retrieved?
+        $this->cando['getGroups']   = false;    // Can a list of available groups be retrieved?
+        $this->cando['external']    = true;     // Does the module do external auth checking?
+        $this->cando['logout']      = true;     // Can the user logout again?
         // Load plugin configuration.
         $this->success = $this->load_configuration();
         if (!$this->success) {
-            msg($lang['config_error'], -1);
+            msg($this->getLang('config_error'), -1);
         }
     }
 
@@ -149,9 +153,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT config_name, config_value
                   FROM {$this->_phpbb_conf['table_prefix']}config
                   WHERE config_name IN ('server_protocol', 'server_name', 'script_path', 'server_port')";
-        $result = $this->_phpbb_sql_link->query($query);
+        $result = $this->_phpbb_db_link->query($query);
         if (!$result) {
-            $this->dbglog('no user found in database.');
+            $this->dbglog('no configuration record found in database');
             return false;
         }
         $server_protocol = '';
@@ -161,7 +165,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         while ($row = $result->fetch_object()) {
             switch ($row->config_name) {
                 case 'server_protocol':
-                    $server_protocol = trim($row->config_value);
+                    $server_protocol = strtolower(trim($row->config_value));
                     break;
                 case 'server_name':
                     $server_name = rtrim(trim($row->config_value), '/');
@@ -178,6 +182,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         }
         if (empty($server_port)) {
             $server_port = '80';
+            if ($server_protocol === 'https://') {
+                $server_port = '443';
+            }
         }
         $server_name = rtrim($server_protocol . $server_name . ':' . $server_port . $script_path, '/');
         $this->_phpbb_conf['url'] = $server_name;
@@ -219,7 +226,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-     * Fetchs user details from phpBB3.
+     * Fetchs user details from phpBB.
      *
      * @param    string          $user           Case sensitive username.
      * @param    boolean         $requireGroups  Whether or not the returned data must include groups.
@@ -247,13 +254,13 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             if (!$this->phpbb_connect()) {
                 return false;
             }
-            $user = $this->_phpbb_sql_link->real_escape_string($this->clean_username($user));
+            $user = $this->_phpbb_db_link->real_escape_string($this->clean_username($user));
             $query = "SELECT user_id, username, username_clean, user_email, user_password, user_type
                       FROM {$this->_phpbb_conf['table_prefix']}users
                       WHERE username_clean = '{$user}'";
-            $result = $this->_phpbb_sql_link->query($query);
+            $result = $this->_phpbb_db_link->query($query);
             if (!$result) {
-                $this->dbglog('no user found in database.');
+                $this->dbglog("no record found in database for cleaned username: {$user}");
                 return false;
             }
             $row = $result->fetch_object();
@@ -284,7 +291,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      * Logs off the user.
      */
     public function logOff() {
-        parent::logOff();
+        if (method_exists(get_parent_class($this), 'logOff')) {
+            parent::logOff();
+        }
         if (empty($this->_phpbb_user_session_id)) {
             $this->get_phpbb_cookie_name();
             if (empty($this->_phpbb_conf['cookie_name'])) {
@@ -318,27 +327,29 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $this->_phpbb_conf['root_path'] = DOKU_INC . rtrim(trim($this->getConf('phpbb_root_path')), '/') . '/';
             $this->_phpbb_conf['phpEx'] = substr(strrchr(__FILE__, '.'), 1);
             if (!@file_exists($this->_phpbb_conf['root_path'] . 'config.' . $this->_phpbb_conf['phpEx'])) {
-                $this->dbglog('phpBB3 installation cannot be found.');
+                $this->dbglog('phpBB installation not found');
                 return false;
             }
             include($this->_phpbb_conf['root_path'] . 'config.' . $this->_phpbb_conf['phpEx']);
+            $this->_phpbb_conf['dbms'] = $dbms;
             $this->_phpbb_conf['dbhost'] = $dbhost;
+            $this->_phpbb_conf['dbport'] = $dbport;
             $this->_phpbb_conf['dbname'] = $dbname;
             $this->_phpbb_conf['dbuser'] = $dbuser;
             $this->_phpbb_conf['dbpasswd'] = $dbpasswd;
             $this->_phpbb_conf['table_prefix'] = $table_prefix;
-            foreach (array('dbhost', 'dbname', 'dbuser', 'dbpasswd', 'table_prefix') as $member) {
+            foreach (array('dbms', 'dbhost', 'dbname', 'dbuser', 'dbpasswd', 'table_prefix') as $member) {
                 if (empty($this->_phpbb_conf[$member])) {
-                    $this->dbglog("phpBB3 config variable {$member} not set.");
+                    $this->dbglog("phpBB config variable {$member} not set");
                     return false;
                 }
             }
             if ($this->get_phpbb_url() === false) {
-                $this->dbglog('cannot get phpBB URL.');
+                $this->dbglog('cannot get phpBB URL');
                 return false;
             }
             if (!$this->get_phpbb_cookie_name()) {
-                $this->dbglog('cannot get phpBB cookie name.');
+                $this->dbglog('cannot get phpBB cookie name');
                 return false;
             }
             $this->_cache->storeCache(serialize($this->_phpbb_conf));
@@ -383,28 +394,42 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      * @return   boolean True on success, false otherwise.
      */
     private function phpbb_connect() {
-        if (!$this->_phpbb_sql_link) {
-            $this->_phpbb_sql_link = new mysqli(
-                $this->_phpbb_conf['dbhost'], $this->_phpbb_conf['dbuser'],
-                $this->_phpbb_conf['dbpasswd'], $this->_phpbb_conf['dbname']
-            );
-            if (!$this->_phpbb_sql_link || $this->_phpbb_sql_link->connect_error) {
-                $this->dbglog('cannot connect to database server (' . $this->_phpbb_sql_link->connect_errno .')');
-                msg($lang['database_error'], -1);
-                $this->_phpbb_sql_link = null;
+        if (!$this->_phpbb_db_link) {
+            if (!empty($this->_phpbb_conf['dbport'])) {
+                $this->_phpbb_db_link = new mysqli(
+                    $this->_phpbb_conf['dbhost'], $this->_phpbb_conf['dbuser'],
+                    $this->_phpbb_conf['dbpasswd'], $this->_phpbb_conf['dbname'],
+                    (int)$this->_phpbb_conf['dbport']
+                );
+            } else {
+                $this->_phpbb_db_link = new mysqli(
+                    $this->_phpbb_conf['dbhost'], $this->_phpbb_conf['dbuser'],
+                    $this->_phpbb_conf['dbpasswd'], $this->_phpbb_conf['dbname']
+                );
+            }
+            if (!$this->_phpbb_db_link || $this->_phpbb_db_link->connect_error) {
+                $s = 'cannot connect to database server';
+
+                if ($this->_phpbb_db_link) {
+                    $s .= ' (' . $this->_phpbb_db_link->connect_errno .')';
+                }
+                $this->dbglog($s);
+                msg($this->getLang('database_error'), -1);
+                $this->_phpbb_db_link = null;
                 return false;
             }
-            $this->_phpbb_sql_link->set_charset('utf8');
+            $this->_phpbb_db_link->set_charset('utf8');
         }
-        return ($this->_phpbb_sql_link && $this->_phpbb_sql_link->ping());
+        return ($this->_phpbb_db_link && $this->_phpbb_db_link->ping());
     }
 
     /**
      * Disconnects from phpBB database.
      */
     private function phpbb_disconnect() {
-        if ($this->_phpbb_sql_link !== null) {
-            $this->_phpbb_sql_link->close();
+        if ($this->_phpbb_db_link !== null) {
+            $this->_phpbb_db_link->close();
+            $this->_phpbb_db_link = null;
         }
     }
 
@@ -433,9 +458,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT config_name, config_value
                   FROM {$this->_phpbb_conf['table_prefix']}config
                   WHERE config_name = 'cookie_name'";
-        $result = $this->_phpbb_sql_link->query($query);
+        $result = $this->_phpbb_db_link->query($query);
         if (!$result) {
-            $this->dbglog('database structure error.');
+            $this->dbglog('cannot get phpBB cookie\'s name');
             return false;
         }
         $row = $result->fetch_object();
@@ -463,9 +488,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                   FROM {$this->_phpbb_conf['table_prefix']}groups g, {$this->_phpbb_conf['table_prefix']}users u,
                        {$this->_phpbb_conf['table_prefix']}user_group ug
                   WHERE u.user_id = ug.user_id AND g.group_id = ug.group_id AND u.user_id = {$this->_phpbb_user_id}";
-        $result = $this->_phpbb_sql_link->query($query);
+        $result = $this->_phpbb_db_link->query($query);
         if (!$result) {
-            $this->dbglog('cannot get user\'s groups.');
+            $this->dbglog("cannot get groups for user id: {$this->_phpbb_user_id}");
             return false;
         }
         while ($row = $result->fetch_object()) {
@@ -497,21 +522,21 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $this->_phpbb_user_session_id = array_key_exists($phpbb_cookie_user_sid, $_COOKIE) ? $_COOKIE[$phpbb_cookie_user_sid] : null;
         $phpbb_cookie_user_id = array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
         if (empty($this->_phpbb_user_session_id) || !ctype_xdigit($this->_phpbb_user_session_id)) {
-            $this->dbglog('invalid ID or SID in user\'s cookie.');
+            $this->dbglog('invalid SID in user\'s cookie');
             return false;
         }
         // Get session data from database.
         $query = "SELECT session_id, session_user_id
                   FROM {$this->_phpbb_conf['table_prefix']}sessions
                   WHERE session_id = '{$this->_phpbb_user_session_id}'";
-        $result = $this->_phpbb_sql_link->query($query);
+        $result = $this->_phpbb_db_link->query($query);
         if (!$result) {
-            $this->dbglog('no session found in database.');
+            $this->dbglog("no session found in database for: {$this->_phpbb_user_session_id}");
             return false;
         }
         $row = $result->fetch_object();
         if ($phpbb_cookie_user_id !== (int)$row->session_user_id) {
-            $this->dbglog('invalid SID/User ID pair.');
+            $this->dbglog('invalid SID/User ID pair');
             $result->close();
             unset($row);
             return false;
@@ -526,9 +551,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $query = "UPDATE {$this->_phpbb_conf['table_prefix']}sessions
                       SET session_time = '{$current_time}'
                       WHERE session_id = '{$this->_phpbb_user_session_id}'";
-            $result = $this->_phpbb_sql_link->query($query);
+            $result = $this->_phpbb_db_link->query($query);
             if (!$result) {
-                $this->dbglog('cannot update session.');
+                $this->dbglog("cannot update session {$this->_phpbb_user_session_id}");
             }
         }
         // Check for guest session.
@@ -539,9 +564,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT user_id, username, user_email, user_type
                   FROM {$this->_phpbb_conf['table_prefix']}users
                   WHERE user_id = '{$this->_phpbb_user_id}'";
-        $result = $this->_phpbb_sql_link->query($query);
+        $result = $this->_phpbb_db_link->query($query);
         if (!$result) {
-            $this->dbglog('no user found in database.');
+            $this->dbglog("no user found in database with id: {$this->_phpbb_user_id}");
             return false;
         }
         $row = $result->fetch_object();

@@ -34,7 +34,7 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
     public function handle_login_form(&$event, $param) {
         global $auth;
         global $ID;
-        $use_inline_css = true;
+        $use_inline_css = $this->getConf('phpbb_inline_style');
         $inline_css1 = '';
         $inline_css2 = '';
         $phpbb_url = '';

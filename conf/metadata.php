@@ -8,3 +8,4 @@
 
 $meta['phpbb_root_path']    = array('string');
 $meta['phpbb_cache']        = array('numeric');
+$meta['phpbb_inline_style'] = array('onoff');
