@@ -440,7 +440,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                 $this->_phpbb_db_link = null;
                 return false;
             }
-            return true
+        }
+            return true;
     }
 
     /**

@@ -1,6 +1,6 @@
 <?php
 /**
- * English translation for the authphpbb3 plugin.
+ * English translations for the authphpbb3 plugin.
  *
  * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
  * @author   Eole <eole.dev@outlook.com>

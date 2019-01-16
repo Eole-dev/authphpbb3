@@ -7,5 +7,5 @@
  */
 
 $conf['phpbb_root_path']    = '../forums';
-$conf['phpbb_cache']        = 1;
+$conf['phpbb_cache']        = 0;
 $conf['phpbb_inline_style'] = 1;
