@@ -408,12 +408,11 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $port = '';
             $dsn = '';
 
-            $host = end(explode('\\', $this->_phpbb_conf['dbms']));
             if (!empty($this->_phpbb_conf['dbport'])) {
                 $port = intval($this->_phpbb_conf['dbport']);
             }
             $dsn = ':host=' . $this->_phpbb_conf['dbhost'] . ';port=' . $port .
-                ';dbname=' . $this->_phpbb_conf['dbname'];
+                   ';dbname=' . $this->_phpbb_conf['dbname'];
             try {
                 switch ($host) {
                     case 'mysql':
@@ -426,8 +425,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                         break;
                     case 'postgres':
                         $dsn = 'pgsql' . $dsn .
-                            ';user=' . $this->_phpbb_conf['dbuser'] . 
-                            ';password=' . $this->_phpbb_conf['dbpasswd'];
+                               ';user=' . $this->_phpbb_conf['dbuser'] . 
+                               ';password=' . $this->_phpbb_conf['dbpasswd'];
                         $this->_phpbb_sql_link = new PDO($dsn);
                         $this->_phpbb_sql_link->exec("SET NAMES 'UTF8'");
                         break;
@@ -441,7 +440,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                 return false;
             }
         }
-            return true;
+        return true;
     }
 
     /**
