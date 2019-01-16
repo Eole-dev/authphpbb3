@@ -153,28 +153,32 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT config_name, config_value
                   FROM {$this->_phpbb_conf['table_prefix']}config
                   WHERE config_name IN ('server_protocol', 'server_name', 'script_path', 'server_port')";
-        $result = $this->_phpbb_db_link->query($query);
-        if (!$result) {
-            $this->dbglog('no configuration record found in database');
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for phpBB URL');
+            return false;
+        }
+        if ($result->execute() === false) {
+            $this->dbglog('error while executing query for phpBB URL');
             return false;
         }
         $server_protocol = '';
         $server_name = '';
         $script_path = '';
         $server_port = '';
-        while ($row = $result->fetch_object()) {
-            switch ($row->config_name) {
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            switch ($row['config_name']) {
                 case 'server_protocol':
-                    $server_protocol = strtolower(trim($row->config_value));
+                    $server_protocol = strtolower(trim($row['config_value']));
                     break;
                 case 'server_name':
-                    $server_name = rtrim(trim($row->config_value), '/');
+                    $server_name = rtrim(trim($row['config_value']), '/');
                     break;
                 case 'script_path':
-                    $script_path = trim($row->config_value);
+                    $script_path = trim($row['config_value']);
                     break;
                 case 'server_port':
-                    $server_port = intval($row->config_value);
+                    $server_port = intval($row['config_value']);
                     break;
                 default:
                     break;
@@ -188,13 +192,13 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         }
         $server_name = rtrim($server_protocol . $server_name . ':' . $server_port . $script_path, '/');
         $this->_phpbb_conf['url'] = $server_name;
-        $result->close();
-        unset($row);
+        $result->closeCursor();
+        $result = null;
         return $this->_phpbb_conf['url'];
     }
 
     /**
-     * Authenticates the user. Called on every page load.
+     * Authenticates the user. Called on every page loaded.
      *
      * @param    string  $user   Case sensitive user name.
      * @param    string  $pass   Plain text password for the user.
@@ -254,22 +258,25 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             if (!$this->phpbb_connect()) {
                 return false;
             }
-            $user = $this->_phpbb_db_link->real_escape_string($this->clean_username($user));
             $query = "SELECT user_id, username, username_clean, user_email, user_password, user_type
                       FROM {$this->_phpbb_conf['table_prefix']}users
-                      WHERE username_clean = '{$user}'";
-            $result = $this->_phpbb_db_link->query($query);
-            if (!$result) {
-                $this->dbglog("no record found in database for cleaned username: {$user}");
+                      WHERE username_clean = ?";
+            $result = $this->_phpbb_sql_link->prepare($query);
+            if ($result === false) {
+                $this->dbglog('error while preparing query for user data');
                 return false;
             }
-            $row = $result->fetch_object();
-            $this->_phpbb_user_type = (int)$row->user_type;
-            $this->_phpbb_user_id = (int)$row->user_id;
-            $this->_phpbb_username = $row->username;
-            $this->_phpbb_user_email = $row->user_email;
-            $result->close();
-            unset($row);
+            if (!$result->execute(array($this->clean_username($user)))) {
+                $this->dbglog('error while executing query for user data');
+                return false;
+            }
+            $row = $result->fetch(PDO::FETCH_ASSOC);
+            $this->_phpbb_user_type = (int)$row['user_type'];
+            $this->_phpbb_user_id = (int)$row['user_id'];
+            $this->_phpbb_username = $row['username'];
+            $this->_phpbb_user_email = $row['user_email'];
+            $result->closeCursor();
+            $result = null;
             $this->get_phpbb_user_groups();
             $this->get_phpbb_url();
             $user_data = array(
@@ -304,7 +311,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                 $this->_phpbb_user_session_id = $_COOKIE[$phpbb_cookie_sid_name];
             }
         }
-        if (!empty($this->_phpbb_user_session_id) && ($this->get_phpbb_url() !== false) && $this->_phpbb_user_id) {
+        if (!empty($this->_phpbb_user_session_id) &&
+            ($this->get_phpbb_url() !== false) &&
+            $this->_phpbb_user_id) {
             //global $ID;
 
             $url = $this->_phpbb_conf['url'] . '/ucp.php?mode=logout&sid=' . $this->_phpbb_user_session_id;
@@ -315,7 +324,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     }
 
     /**
-     * Loads the plugin configuration.
+     * Loads the plugin's configuration.
      *
      * @return   boolean   True on success, false otherwise.
      */
@@ -395,32 +404,43 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      */
     private function phpbb_connect() {
         if (!$this->_phpbb_db_link) {
-            if (!empty($this->_phpbb_conf['dbport'])) {
-                $this->_phpbb_db_link = new mysqli(
-                    $this->_phpbb_conf['dbhost'], $this->_phpbb_conf['dbuser'],
-                    $this->_phpbb_conf['dbpasswd'], $this->_phpbb_conf['dbname'],
-                    (int)$this->_phpbb_conf['dbport']
-                );
-            } else {
-                $this->_phpbb_db_link = new mysqli(
-                    $this->_phpbb_conf['dbhost'], $this->_phpbb_conf['dbuser'],
-                    $this->_phpbb_conf['dbpasswd'], $this->_phpbb_conf['dbname']
-                );
-            }
-            if (!$this->_phpbb_db_link || $this->_phpbb_db_link->connect_error) {
-                $s = 'cannot connect to database server';
+            $host = strtolower(end(explode('\\', $this->_phpbb_conf['dbms'])));
+            $port = '';
+            $dsn = '';
 
-                if ($this->_phpbb_db_link) {
-                    $s .= ' (' . $this->_phpbb_db_link->connect_errno .')';
+            $host = end(explode('\\', $this->_phpbb_conf['dbms']));
+            if (!empty($this->_phpbb_conf['dbport'])) {
+                $port = intval($this->_phpbb_conf['dbport']);
+            }
+            $dsn = ':host=' . $this->_phpbb_conf['dbhost'] . ';port=' . $port .
+                ';dbname=' . $this->_phpbb_conf['dbname'];
+            try {
+                switch ($host) {
+                    case 'mysql':
+                    case 'mysqli':
+                        $dsn = 'mysql' . $dsn . ';charset=utf8';
+                        $this->_phpbb_sql_link = new PDO(
+                            $dsn,
+                            $this->_phpbb_conf['dbuser'],
+                            $this->_phpbb_conf['dbpasswd']);
+                        break;
+                    case 'postgres':
+                        $dsn = 'pgsql' . $dsn .
+                            ';user=' . $this->_phpbb_conf['dbuser'] . 
+                            ';password=' . $this->_phpbb_conf['dbpasswd'];
+                        $this->_phpbb_sql_link = new PDO($dsn);
+                        $this->_phpbb_sql_link->exec("SET NAMES 'UTF8'");
+                        break;
+                    default:
+                        break;
                 }
-                $this->dbglog($s);
+            } catch (PDOException $e) {
+                $this->dbglog('cannot connect to database server (' . $e->getMessage() .')');
                 msg($this->getLang('database_error'), -1);
                 $this->_phpbb_db_link = null;
                 return false;
             }
-            $this->_phpbb_db_link->set_charset('utf8');
-        }
-        return ($this->_phpbb_db_link && $this->_phpbb_db_link->ping());
+            return true
     }
 
     /**
@@ -428,7 +448,6 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      */
     private function phpbb_disconnect() {
         if ($this->_phpbb_db_link !== null) {
-            $this->_phpbb_db_link->close();
             $this->_phpbb_db_link = null;
         }
     }
@@ -458,15 +477,19 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT config_name, config_value
                   FROM {$this->_phpbb_conf['table_prefix']}config
                   WHERE config_name = 'cookie_name'";
-        $result = $this->_phpbb_db_link->query($query);
-        if (!$result) {
-            $this->dbglog('cannot get phpBB cookie\'s name');
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for cookie.');
             return false;
         }
-        $row = $result->fetch_object();
-        $this->_phpbb_conf['cookie_name'] = $row->config_value;
-        $result->close();
-        unset($row);
+        if (!$result->execute()) {
+            $this->dbglog('error while executing query for cookie.');
+            return false;
+        }
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+        $this->_phpbb_conf['cookie_name'] = $row['config_value'];
+        $result->closeCursor();
+        $result = null;
         return true;
     }
 
@@ -487,21 +510,25 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $query = "SELECT *
                   FROM {$this->_phpbb_conf['table_prefix']}groups g, {$this->_phpbb_conf['table_prefix']}users u,
                        {$this->_phpbb_conf['table_prefix']}user_group ug
-                  WHERE u.user_id = ug.user_id AND g.group_id = ug.group_id AND u.user_id = {$this->_phpbb_user_id}";
-        $result = $this->_phpbb_db_link->query($query);
-        if (!$result) {
-            $this->dbglog("cannot get groups for user id: {$this->_phpbb_user_id}");
+                  WHERE u.user_id = ug.user_id AND g.group_id = ug.group_id AND u.user_id = ?";
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for user\'s groups');
             return false;
         }
-        while ($row = $result->fetch_object()) {
-            $this->_phpbb_groups[] = $row->group_name;
+        if (!$result->execute(array($this->_phpbb_user_id))) {
+            $this->dbglog('error while executing query for user\'s groups');
+            return false;
+        }
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            $this->_phpbb_groups[] = $row['group_name'];
         }
         // If the user is a founder.
         if ($this->_phpbb_user_type === 3) {
             $this->_phpbb_groups[] = 'admin';
         }
-        $result->close();
-        unset($row);
+        $result->closeCursor();
+        $result = null;
         return true;
     }
 
@@ -519,8 +546,10 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         }
         $phpbb_cookie_user_sid = $this->_phpbb_conf['cookie_name'] . '_sid';
         $phpbb_cookie_user_id = $this->_phpbb_conf['cookie_name'] . '_u';
-        $this->_phpbb_user_session_id = array_key_exists($phpbb_cookie_user_sid, $_COOKIE) ? $_COOKIE[$phpbb_cookie_user_sid] : null;
-        $phpbb_cookie_user_id = array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
+        $this->_phpbb_user_session_id =
+            array_key_exists($phpbb_cookie_user_sid, $_COOKIE) ? $_COOKIE[$phpbb_cookie_user_sid] : null;
+        $phpbb_cookie_user_id =
+            array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
         if (empty($this->_phpbb_user_session_id) || !ctype_xdigit($this->_phpbb_user_session_id)) {
             $this->dbglog('invalid SID in user\'s cookie');
             return false;
@@ -528,33 +557,42 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         // Get session data from database.
         $query = "SELECT session_id, session_user_id
                   FROM {$this->_phpbb_conf['table_prefix']}sessions
-                  WHERE session_id = '{$this->_phpbb_user_session_id}'";
-        $result = $this->_phpbb_db_link->query($query);
-        if (!$result) {
-            $this->dbglog("no session found in database for: {$this->_phpbb_user_session_id}");
+                  WHERE session_id = ?";
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for session');
             return false;
         }
-        $row = $result->fetch_object();
-        if ($phpbb_cookie_user_id !== (int)$row->session_user_id) {
+        if (!$result->execute(array($this->_phpbb_user_session_id))) {
+            $this->dbglog('error while executing query for session');
+            return false;
+        }
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+        if ($phpbb_cookie_user_id !== (int)$row['session_user_id']) {
             $this->dbglog('invalid SID/User ID pair');
-            $result->close();
-            unset($row);
+            $result->closeCursor();
+            $result = null;
             return false;
         }
-        $this->_phpbb_user_id = (int)$row->session_user_id;
-        $this->_phpbb_sessiontime = $row->session_time;
-        $result->close();
-        unset($row);
+        $this->_phpbb_user_id = (int)$row['session_user_id'];
+        $this->_phpbb_sessiontime = $row['session_time'];
+        $result->closeCursor();
+        $result = null;
         // Update session time.
         $current_time = time();
         if ($current_time > $this->_phpbb_sessiontime) {
             $query = "UPDATE {$this->_phpbb_conf['table_prefix']}sessions
-                      SET session_time = '{$current_time}'
-                      WHERE session_id = '{$this->_phpbb_user_session_id}'";
-            $result = $this->_phpbb_db_link->query($query);
-            if (!$result) {
-                $this->dbglog("cannot update session {$this->_phpbb_user_session_id}");
+                      SET session_time = ?
+                      WHERE session_id = ?";
+            $result = $this->_phpbb_sql_link->prepare($query);
+            if ($result === false) {
+                $this->dbglog('error while preparing query for session update');
+                return false;
             }
+            if (!$result->execute(array($current_time, $this->_phpbb_user_session_id))) {
+                $this->dbglog('error while executing query for session update');
+            }
+            $result = null;
         }
         // Check for guest session.
         if ($this->_phpbb_user_id === 1) {
@@ -563,18 +601,22 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         // Get username from database.
         $query = "SELECT user_id, username, user_email, user_type
                   FROM {$this->_phpbb_conf['table_prefix']}users
-                  WHERE user_id = '{$this->_phpbb_user_id}'";
-        $result = $this->_phpbb_db_link->query($query);
-        if (!$result) {
-            $this->dbglog("no user found in database with id: {$this->_phpbb_user_id}");
+                  WHERE user_id = ?";
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for username');
             return false;
         }
-        $row = $result->fetch_object();
-        $this->_phpbb_user_type = (int)$row->user_type;
-        $this->_phpbb_username = $row->username;
-        $this->_phpbb_user_email = $row->user_email;
-        $result->close();
-        unset($row);
+        if (!$result->execute(array($this->_phpbb_user_id))) {
+            $this->dbglog('error while executing query for username');
+            return false;
+        }
+        $row = $result->fetch(PDO::FETCH_ASSOC);
+        $this->_phpbb_user_type = (int)$row['user_type'];
+        $this->_phpbb_username = $row['username'];
+        $this->_phpbb_user_email = $row['user_email'];
+        $result->closeCursor();
+        $result = null;
         // Get user groups from database.
         $this->get_phpbb_user_groups();
         return true;

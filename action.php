@@ -121,7 +121,7 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         global $auth, $conf;
         $profile = '<a href="%s" class="interwiki iw_user" rel="nofollow" target="_blank">%s</a>';
 
-        if ($conf['showuseras'] !== 'username_link' || $event->data['textonly']) {
+        if (($conf['showuseras'] !== 'username_link') || $event->data['textonly']) {
             return ;
         }
         if (empty($event->data['name'])) {

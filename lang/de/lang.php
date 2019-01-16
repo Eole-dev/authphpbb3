@@ -6,8 +6,8 @@
  * @author   Benjamin Vetter <mail@b-vetter.de>
  */
 
-$lang['config_error']       = 'Konfigurations Fehler: Kontaktiere bitte einen Administrator.';
-$lang['database_error']     = 'Datenbank Fehler: Kontaktiere bitte einen Administrator.';
+$lang['config_error']       = '[authphpbb3] Konfigurations Fehler: Kontaktiere bitte einen Administrator.';
+$lang['database_error']     = '[authphpbb3] Datenbank-Verbindungsfehler: Kontaktiere bitte einen Administrator.';
 $lang['login_login']        = 'Benutzername';
 $lang['login_password']     = 'Passwort';
 $lang['login_remember']     = 'Merken';

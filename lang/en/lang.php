@@ -6,8 +6,8 @@
  * @author   Eole <eole.dev@outlook.com>
  */
 
-$lang['config_error']       = 'Configuration error: contact an administrator.';
-$lang['database_error']     = 'Database error: contact an administrator.';
+$lang['config_error']       = '[authphpbb3] Configuration error: contact an administrator.';
+$lang['database_error']     = '[authphpbb3] Database connection error: contact an administrator.';
 $lang['login_login']        = 'Username';
 $lang['login_password']     = 'Password';
 $lang['login_remember']     = 'Remember me';
