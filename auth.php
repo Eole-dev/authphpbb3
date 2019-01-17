@@ -79,13 +79,19 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $this->cando['modName']     = false;    // Can real names be changed?
         $this->cando['modMail']     = false;    // Can emails be changed?
         $this->cando['modGroups']   = false;    // Can groups be changed?
-        $this->cando['getUsers']    = false;    // Can a (filtered) list of users be retrieved?
-        $this->cando['getUserCount']= false;    // Can the number of users be retrieved?
+        $this->cando['getUsers']    = true;     // Can a (filtered) list of users be retrieved?
+        $this->cando['getUserCount']= true;     // Can the number of users be retrieved?
         $this->cando['getGroups']   = false;    // Can a list of available groups be retrieved?
         $this->cando['external']    = true;     // Does the module do external auth checking?
         $this->cando['logout']      = true;     // Can the user logout again?
-        // Load plugin configuration.
-        $this->success = $this->load_configuration();
+        // Check database connection requirement.
+        if (!class_exists('PDO')) {
+            $this->dbglog('PDO extension for PHP not found.');
+            $this->success = false;
+        } else {
+            // Load plugin configuration.
+            $this->success = $this->load_configuration();
+        }
         if (!$this->success) {
             msg($this->getLang('config_error'), -1);
         }
@@ -232,15 +238,15 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
     /**
      * Fetchs user details from phpBB.
      *
-     * @param    string          $user           Case sensitive username.
-     * @param    boolean         $requireGroups  Whether or not the returned data must include groups.
-     * @return   array/boolean                   False for error conditions and an array for success.
-     *                                           array['name']           string  User's name.
-     *                                           array['username']       string  User's name.
-     *                                           array['mail']           string  User's email address.
-     *                                           array['phpbb_user_id']  string  User's ID.
-     *                                           array['phpbb_profile']  string  User's link to profile.
-     *                                           array['grps']           array   Group names the user belongs to.
+     * @param   string          $user           Case sensitive username.
+     * @param   boolean         $requireGroups  Whether or not the returned data must include groups.
+     * @return  array/boolean                   False for error conditions and an array for success.
+     *                                          array['name']           string  User's name.
+     *                                          array['username']       string  User's name.
+     *                                          array['mail']           string  User's email address.
+     *                                          array['phpbb_user_id']  string  User's ID.
+     *                                          array['phpbb_profile']  string  User's link to profile.
+     *                                          array['grps']           array   Group names the user belongs to.
      */
     public function getUserData($user, $requireGroups = true) {
         if (empty($user)) {
@@ -258,7 +264,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             if (!$this->phpbb_connect()) {
                 return false;
             }
-            $query = "SELECT user_id, username, username_clean, user_email, user_password, user_type
+            $query = "SELECT user_id, username, username_clean, user_email, user_type
                       FROM {$this->_phpbb_conf['table_prefix']}users
                       WHERE username_clean = ?";
             $result = $this->_phpbb_sql_link->prepare($query);
@@ -292,6 +298,130 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         }
         $cache = null;
         return $user_data;
+    }
+
+    /**
+    * Bulk retrieval of users' data (does not use cache system).
+    *
+    * @param    int             $start  Index of first user to be returned.
+    * @param    int             $limit  Maximum number of users to be returned.
+    * @param    array           $filter Array of field/pattern pairs.
+    * @return   array/boolean           List of arrays returned by getUserData function.
+    */
+    public function retrieveUsers($start = 0, $limit = 0, $filter = array()) {
+        if (!$this->phpbb_connect()) {
+            return false;
+        }
+        $start = intval($start);
+        if ($start < 0) {
+            $start = 0;
+        }
+        $limit = intval($limit);
+        if ($limit <= 0) {
+            // Arbitrary limit.
+            $limit = 10000;
+        }
+        if (is_null($filter)) {
+            $filter = array();
+        }
+        if (isset($filter['grps'])) {
+            $filter['group'] = $filter['grps'];
+        }
+        foreach (array('user', 'name', 'mail') as $key) {
+            if (!isset($filter[$key])) {
+                $filter[$key] = '%';
+            } else {
+                $filter[$key] = '%' . $filter[$key] . '%';
+            }
+        }
+        $filter['start'] = (int)$start;
+        $filter['end'] = (int)($start + $limit);
+        $filter['limit'] = (int)$limit;
+        // Gets users.
+        $query = "SELECT user_id, username, username_clean, user_email
+                  FROM {$this->_phpbb_conf['table_prefix']}users
+                  WHERE (username like ':name' OR username like ':user' OR
+                        username_clean like ':nameclean' OR username_clean like ':userclean') AND
+                        user_mail like ':mail'
+                  LIMIT :limit OFFSET :start";
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for users data');
+            return false;
+        }
+        $result->bindValue(':name', $filter['name'], PDO::PARAM_STR);
+        $result->bindValue(':user', $filter['user'], PDO::PARAM_STR);
+        $result->bindValue(':nameclean', $filter['name'], PDO::PARAM_STR);
+        $result->bindValue(':userclean', $filter['user'], PDO::PARAM_STR);
+        $result->bindValue(':mail', $filter['mail'], PDO::PARAM_STR);
+        $result->bindValue(':limit', (int)$filter['limit'], PDO::PARAM_INT);
+        $result->bindValue(':start', (int)$filter['start'], PDO::PARAM_INT);
+        if (!$result->execute()) {
+            $this->dbglog('error while executing query for users data');
+            return false;
+        }
+        $users = array();
+        // Gets users' groups.
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            $user_data = array(
+                'name'          => $row['username'],
+                'username'      => $row['username'],
+                'mail'          => $row['user_email'],
+                'phpbb_user_id' => $row['user_id'],
+                'phpbb_profile' => $this->_phpbb_conf['url'] . '/memberlist.php?mode=viewprofile&u=' .
+                                   $row['user_id'],
+                'grps'          => array()
+            );
+            $query = "SELECT *
+                      FROM {$this->_phpbb_conf['table_prefix']}groups g, 
+                           {$this->_phpbb_conf['table_prefix']}users u,
+                           {$this->_phpbb_conf['table_prefix']}user_group ug
+                      WHERE u.user_id = ug.user_id AND g.group_id = ug.group_id AND u.user_id = ?";
+            $resgrp = $this->_phpbb_sql_link->prepare($query);
+            if (($resgrp === false) || !$resgrp->execute(array($row['user_id']))) {
+                $this->dbglog('error while executing query for ' . $row['user_id'] . ' groups');
+                // If no group filter, we still add the user to the list.
+                if (!isset($filter['group'])) {
+                    $users[] = $user_data;
+                }
+                $resgrp->closeCursor();
+                $resgrp = null;
+                continue;
+            }
+            $ingroup = false;
+            while ($rowgrp = $resgrp->fetch(PDO::FETCH_ASSOC)) {
+                $user_data['grps'][] = $rowgrp['group_name'];
+                if (!$ingroup &&
+                    isset($filter['group']) &&
+                    (strpos($rowgrp['group_name'], $filter['group']) !== false)) {
+                    $ingroup = true;
+                }
+            }
+            // Apply group's filter.
+            if (!isset($filter['group']) || (isset($filter['group']) && $ingroup)) {
+                $users[] = $user_data;
+            }
+            $resgrp->closeCursor();
+            $resgrp = null;
+        }
+        $result->closeCursor();
+        $result = null;
+        return $users;
+    }
+
+    /**
+     * Returns the number of users which meet $filter criteria (does not use cache system).
+     *
+     * @param   array   $filter Array of field/pattern pairs, empty array for no filter.
+     * @return  int             Number of users matching criteria.
+     */
+    public function getUserCount($filter = array()) {
+        $users = $this->retrieveUsers(0, 0, $filter);
+
+        if ($users === false) {
+            return 0;
+        }
+        return count($users);
     }
 
     /**
@@ -516,7 +646,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             return false;
         }
         $query = "SELECT *
-                  FROM {$this->_phpbb_conf['table_prefix']}groups g, {$this->_phpbb_conf['table_prefix']}users u,
+                  FROM {$this->_phpbb_conf['table_prefix']}groups g,
+                       {$this->_phpbb_conf['table_prefix']}users u,
                        {$this->_phpbb_conf['table_prefix']}user_group ug
                   WHERE u.user_id = ug.user_id AND g.group_id = ug.group_id AND u.user_id = ?";
         $result = $this->_phpbb_sql_link->prepare($query);
