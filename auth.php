@@ -341,7 +341,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             }
             include($this->_phpbb_conf['root_path'] . 'config.' . $this->_phpbb_conf['phpEx']);
             $this->_phpbb_conf['dbms'] = $dbms;
-            $this->_phpbb_conf['dbhost'] = $dbhost;
+            $this->_phpbb_conf['dbhost'] = empty($dbhost) ? '127.0.0.1' : $dbhost;
             $this->_phpbb_conf['dbport'] = $dbport;
             $this->_phpbb_conf['dbname'] = $dbname;
             $this->_phpbb_conf['dbuser'] = $dbuser;
@@ -409,9 +409,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $dsn = '';
 
             if (!empty($this->_phpbb_conf['dbport'])) {
-                $port = intval($this->_phpbb_conf['dbport']);
+                $port = ';port=' . intval($this->_phpbb_conf['dbport']);
             }
-            $dsn = ':host=' . $this->_phpbb_conf['dbhost'] . ';port=' . $port .
+            $dsn = ':host=' . $this->_phpbb_conf['dbhost'] . $port .
                    ';dbname=' . $this->_phpbb_conf['dbname'];
             try {
                 switch ($host) {
