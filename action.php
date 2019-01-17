@@ -51,9 +51,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $event->data->params['action'] = $phpbb_url . '/ucp.php?mode=login';
         // Username field.
         $inline_css1 = ($use_inline_css ? ' style="padding-right:10px"' : '');
-        $elem = '<label class="block" for="username"">' .
+        $elem = '<label class="block" for="username">' .
                     '<span' . $inline_css1 . '>' . $this->getLang('login_login') . '</span>' .
-                    '<input type="text" tabindex="1" name="username" id="for="username"" class="edit">' .
+                    '<input type="text" tabindex="1" name="username" id="username" class="edit">' .
                 '</label><br/>';
         $pos = $event->data->findElementByAttribute('name', 'u');
         if ($pos === false) {
@@ -65,7 +65,7 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $inline_css1 = ($use_inline_css ? ' style="padding-right:10px"' : '');
         $elem = '<label class="block" for="password">' .
                     '<span' . $inline_css1 . '>' . $this->getLang('login_password') . '</span>' .
-                    '<input type="password" tabindex="2" name="password" id="password" autocomplete="off" class="edit">' .
+                    '<input type="password" tabindex="2" name="password" id="password" class="edit">' .
                 '</label><br/>';
         $pos = $event->data->findElementByAttribute('name', 'p');
         if ($pos === false) {
