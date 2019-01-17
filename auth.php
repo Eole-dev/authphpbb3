@@ -430,8 +430,16 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                         $this->_phpbb_sql_link = new PDO($dsn);
                         $this->_phpbb_sql_link->exec("SET NAMES 'UTF8'");
                         break;
-                    default:
+                    case 'oracle':
+                        $dsn = 'oci' . $dsn . ';charset=utf8';
+                        $this->_phpbb_sql_link = new PDO(
+                            $dsn,
+                            $this->_phpbb_conf['dbuser'],
+                            $this->_phpbb_conf['dbpasswd']);
                         break;
+                    default:
+                        msg($this->getLang('database_support'), -1);
+                        return false;
                 }
             } catch (PDOException $e) {
                 $this->dbglog('cannot connect to database server (' . $e->getMessage() .')');

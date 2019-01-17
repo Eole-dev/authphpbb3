@@ -8,6 +8,7 @@
 
 $lang['config_error']       = '[authphpbb3] Configuration error: contact an administrator.';
 $lang['database_error']     = '[authphpbb3] Database connection error: contact an administrator.';
+$lang['database_support']   = '[authphpbb3] The driver used to connect to the database is not supported.';
 $lang['login_login']        = 'Username';
 $lang['login_password']     = 'Password';
 $lang['login_remember']     = 'Remember me';

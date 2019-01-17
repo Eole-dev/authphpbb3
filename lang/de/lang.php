@@ -8,6 +8,7 @@
 
 $lang['config_error']       = '[authphpbb3] Konfigurations Fehler: Kontaktiere bitte einen Administrator.';
 $lang['database_error']     = '[authphpbb3] Datenbank-Verbindungsfehler: Kontaktiere bitte einen Administrator.';
+$lang['database_support']   = '[authphpbb3] Die Verbindungsmethode zur Datenbank wird nicht unterstützt.'
 $lang['login_login']        = 'Benutzername';
 $lang['login_password']     = 'Passwort';
 $lang['login_remember']     = 'Merken';
