@@ -237,7 +237,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      * @return   array/boolean                   False for error conditions and an array for success.
      *                                           array['name']           string  User's name.
      *                                           array['username']       string  User's name.
-     *                                           array['email']          string  User's email address.
+     *                                           array['mail']           string  User's email address.
      *                                           array['phpbb_user_id']  string  User's ID.
      *                                           array['phpbb_profile']  string  User's link to profile.
      *                                           array['grps']           array   Group names the user belongs to.
@@ -282,7 +282,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $user_data = array(
                 'name'          => $this->_phpbb_username,
                 'username'      => $this->_phpbb_username,
-                'email'         => $this->_phpbb_user_email,
+                'mail'          => $this->_phpbb_user_email,
                 'phpbb_user_id' => $this->_phpbb_user_id,
                 'phpbb_profile' => $this->_phpbb_conf['url'] . '/memberlist.php?mode=viewprofile&u=' .
                                    $this->_phpbb_user_id,
