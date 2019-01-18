@@ -6,6 +6,6 @@
  * @author	Eole <eole.dev@outlook.com>
  */
 
-$lang['phpbb_root_path']	= 'Relative path to phpBB forum.';
-$lang['phpbb_cache']		= 'Cache duration in days (0 will disable the cache).';
+$lang['phpbb_root_path']    = 'Relative path to phpBB forum.';
+$lang['phpbb_cache']        = 'Cache duration in days (0 will disable the cache).';
 $lang['phpbb_inline_style'] = 'If enabled, inline-style is used in HTML tags of the authentication form.';

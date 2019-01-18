@@ -613,6 +613,18 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                             $this->_phpbb_conf['dbuser'],
                             $this->_phpbb_conf['dbpasswd']);
                         break;
+                    case 'sqlite':
+                    case 'sqlite3':
+                        if ($host === 'sqlite') {
+                            // SQLite 2 prefix.
+                            $host = 'sqlite2';
+                        } else {
+                            // SQLite 3 prefix.
+                            $host = 'sqlite';
+                        }
+                        $dsn = $host . ':' . $this->_phpbb_conf['root_path'] . $this->_phpbb_conf['dbhost'];
+                        $this->_phpbb_sql_link = new PDO($dsn);
+                        break;
                     default:
                         msg($this->getLang('database_support'), -1);
                         return false;

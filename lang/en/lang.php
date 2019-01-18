@@ -2,8 +2,8 @@
 /**
  * English translations for the authphpbb3 plugin.
  *
- * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author   Eole <eole.dev@outlook.com>
+ * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author  Eole <eole.dev@outlook.com>
  */
 
 $lang['config_error']       = '[authphpbb3] Configuration error: contact an administrator.';

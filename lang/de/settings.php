@@ -3,7 +3,7 @@
  * German settings translations for the authphpbb3 plugin.
  *
  * @license	GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author	Benjamin Vetter <mail@b-vetter.de>
+ * @author  Benjamin Vetter <mail@b-vetter.de>
  */
 
 $lang['phpbb_root_path']    = 'Relativer Pfad zum phpBB Forum.';

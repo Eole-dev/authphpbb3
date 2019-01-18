@@ -2,8 +2,8 @@
 /**
  * German translations for the authphpbb3 plugin.
  *
- * @license  GPL 2 (http://www.gnu.org/licenses/gpl.html)
- * @author   Benjamin Vetter <mail@b-vetter.de>
+ * @license GPL 2 (http://www.gnu.org/licenses/gpl.html)
+ * @author  Benjamin Vetter <mail@b-vetter.de>
  */
 
 $lang['config_error']       = '[authphpbb3] Konfigurations Fehler: Kontaktiere bitte einen Administrator.';
