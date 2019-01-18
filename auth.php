@@ -81,7 +81,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $this->cando['modGroups']   = false;    // Can groups be changed?
         $this->cando['getUsers']    = true;     // Can a (filtered) list of users be retrieved?
         $this->cando['getUserCount']= true;     // Can the number of users be retrieved?
-        $this->cando['getGroups']   = false;    // Can a list of available groups be retrieved?
+        $this->cando['getGroups']   = true;     // Can a list of available groups be retrieved?
         $this->cando['external']    = true;     // Does the module do external auth checking?
         $this->cando['logout']      = true;     // Can the user logout again?
         // Check database connection requirement.
@@ -409,6 +409,52 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         return $users;
     }
 
+    /**
+    * Bulk retrieval of groups (does not use cache system).
+    *
+    * @param    int             $start  Index of first group to be returned.
+    * @param    int             $limit  Maximum number of groups to be returned.
+    * @return   array/boolean           List of groups.
+    */
+    public function retrieveGroups($start = 0, $limit = 0) {
+        if (!$this->phpbb_connect()) {
+            return false;
+        }
+        $start = intval($start);
+        if ($start < 0) {
+            $start = 0;
+        }
+        $limit = intval($limit);
+        if ($limit <= 0) {
+            // Arbitrary limit.
+            $limit = 10000;
+        }
+        $query = "SELECT *
+                  FROM {$this->_phpbb_conf['table_prefix']}groups
+                  LIMIT :limit OFFSET :start";
+        $result = $this->_phpbb_sql_link->prepare($query);
+        if ($result === false) {
+            $this->dbglog('error while preparing query for groups data');
+            return false;
+        }
+        $result->bindValue(':limit', (int)$limit, PDO::PARAM_INT);
+        $result->bindValue(':start', (int)$start, PDO::PARAM_INT);
+        if (!$result->execute()) {
+            $this->dbglog('error while executing query for groups data');
+            return false;
+        }
+        $groups = array();
+        while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
+            if (isset($row['group_name']) && !empty($row['group_name'])) {
+                $groups[$row['group_name']] = $row;
+            }
+        }
+        $result->closeCursor();
+        $result = null;
+        ksort($groups);
+        return $groups;
+    }
+    
     /**
      * Returns the number of users which meet $filter criteria (does not use cache system).
      *
