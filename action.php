@@ -21,6 +21,11 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
      * @param Doku_Event_Handler $controller.
      */
     public function register(Doku_Event_Handler $controller) {
+        global $auth;
+        
+        if (!$auth || (get_class($auth) !== 'auth_plugin_authphpbb3')) {
+            return;
+        }
         $controller->register_hook('HTML_LOGINFORM_OUTPUT', 'BEFORE', $this, 'handle_login_form');
         $controller->register_hook('COMMON_USER_LINK', 'AFTER', $this, 'handle_user_link');
     }
@@ -42,6 +47,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $elem = '';
         $pos = 0;
 
+        if (!$auth || (get_class($auth) !== 'auth_plugin_authphpbb3')) {
+            return;
+        }
         $phpbb_url = $auth->get_phpbb_url();
         if ($phpbb_url === false) {
             return ;
