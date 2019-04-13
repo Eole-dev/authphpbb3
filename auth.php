@@ -328,11 +328,19 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $filter['group'] = $filter['grps'];
         }
         foreach (array('user', 'name', 'mail') as $key) {
-            if (!isset($filter[$key])) {
-                $filter[$key] = '%';
-            } else {
-                $filter[$key] = '%' . $filter[$key] . '%';
+            $tmp = '%';
+            if (isset($filter[$key])) {
+                $tmp = str_replace('%', '', $filter[$key]);
+                if (!is_string($tmp)) {
+                    $tmp = '';
+                }
+                if (empty($tmp)) {
+                    $tmp = '%';
+                } else {
+                    $tmp = '%' . $tmp . '%';
+                }
             }
+            $filter[$key] = $tmp;
         }
         $filter['start'] = (int)$start;
         $filter['end'] = (int)($start + $limit);
