@@ -348,9 +348,9 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         // Gets users.
         $query = "SELECT user_id, username, username_clean, user_email
                   FROM {$this->_phpbb_conf['table_prefix']}users
-                  WHERE (username like ':name' OR username like ':user' OR
-                        username_clean like ':nameclean' OR username_clean like ':userclean') AND
-                        user_email like ':mail'
+                  WHERE (username like :name OR username like :user OR
+                        username_clean like :nameclean OR username_clean like :userclean) AND
+                        user_email like :mail
                   LIMIT :limit OFFSET :start";
         $result = $this->_phpbb_sql_link->prepare($query);
         if ($result === false) {
