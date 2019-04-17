@@ -340,7 +340,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                     $tmp = '%' . $tmp . '%';
                 }
             }
-			$filter[$key] = $tmp;
+            $filter[$key] = $tmp;
         }
         $filter['start'] = (int)$start;
         $filter['end'] = (int)($start + $limit);
@@ -757,7 +757,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
         if (empty($this->_phpbb_user_session_id) || !ctype_xdigit($this->_phpbb_user_session_id)) {
             $this->dbglog('invalid SID in user\'s cookie ' .
-				'(SID=' . $phpbb_cookie_user_sid . ', Value=' . $this->_phpbb_user_session_id . ')');
+                '(SID=' . $phpbb_cookie_user_sid . ', Value=' . $this->_phpbb_user_session_id . ')');
             return false;
         }
         // Get session data from database.

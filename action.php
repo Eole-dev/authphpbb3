@@ -42,9 +42,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Action_Plugin {
         $elem = '';
         $pos = 0;
 
-		if (!is_a($auth, 'auth_plugin_authphpbb3')) {
-			return;
-		}
+        if (!is_a($auth, 'auth_plugin_authphpbb3')) {
+            return;
+        }
         $phpbb_url = $auth->get_phpbb_url();
         if ($phpbb_url === false) {
             return ;
@@ -124,9 +124,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Action_Plugin {
         global $auth, $conf;
         $profile = '<a href="%s" class="interwiki iw_user" rel="nofollow" target="_blank">%s</a>';
 
-		if (!is_a($auth, 'auth_plugin_authphpbb3')) {
-			return;
-		}
+        if (!is_a($auth, 'auth_plugin_authphpbb3')) {
+            return;
+        }
         if (($conf['showuseras'] !== 'username_link') || $event->data['textonly']) {
             return ;
         }
