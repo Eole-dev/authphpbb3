@@ -340,7 +340,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                     $tmp = '%' . $tmp . '%';
                 }
             }
-            $filter[$key] = $tmp;
+			$filter[$key] = $tmp;
         }
         $filter['start'] = (int)$start;
         $filter['end'] = (int)($start + $limit);
@@ -373,7 +373,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         while ($row = $result->fetch(PDO::FETCH_ASSOC)) {
             $user_data = array(
                 'name'          => $row['username'],
-                'username'      => $row['username'],
+                'username'      => $row['username_clean'],
                 'mail'          => $row['user_email'],
                 'phpbb_user_id' => $row['user_id'],
                 'phpbb_profile' => $this->_phpbb_conf['url'] . '/memberlist.php?mode=viewprofile&u=' .
@@ -390,7 +390,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
                 $this->dbglog('error while executing query for ' . $row['user_id'] . ' groups');
                 // If no group filter, we still add the user to the list.
                 if (!isset($filter['group'])) {
-                    $users[] = $user_data;
+                    $users[$user_data['username']] = $user_data;
                 }
                 $resgrp->closeCursor();
                 $resgrp = null;
@@ -407,7 +407,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             }
             // Apply group's filter.
             if (!isset($filter['group']) || (isset($filter['group']) && $ingroup)) {
-                $users[] = $user_data;
+                $users[$user_data['username']] = $user_data;
             }
             $resgrp->closeCursor();
             $resgrp = null;
@@ -531,7 +531,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
             $this->_phpbb_conf['dbuser'] = $dbuser;
             $this->_phpbb_conf['dbpasswd'] = $dbpasswd;
             $this->_phpbb_conf['table_prefix'] = $table_prefix;
-            foreach (array('dbms', 'dbhost', 'dbname', 'dbuser', 'dbpasswd', 'table_prefix') as $member) {
+            foreach (array('dbms', 'dbhost', 'dbname', 'dbuser') as $member) {
                 if (empty($this->_phpbb_conf[$member])) {
                     $this->dbglog("phpBB config variable {$member} not set");
                     return false;
@@ -756,7 +756,8 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         $phpbb_cookie_user_id =
             array_key_exists($phpbb_cookie_user_id, $_COOKIE) ? intval($_COOKIE[$phpbb_cookie_user_id]) : null;
         if (empty($this->_phpbb_user_session_id) || !ctype_xdigit($this->_phpbb_user_session_id)) {
-            $this->dbglog('invalid SID in user\'s cookie');
+            $this->dbglog('invalid SID in user\'s cookie ' .
+				'(SID=' . $phpbb_cookie_user_sid . ', Value=' . $this->_phpbb_user_session_id . ')');
             return false;
         }
         // Get session data from database.

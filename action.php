@@ -13,7 +13,7 @@ if (!defined('DOKU_INC')) {
 /**
  * Action class for authphpbb3 plugin.
  */
-class action_plugin_authphpbb3 extends DokuWiki_Plugin {
+class action_plugin_authphpbb3 extends DokuWiki_Action_Plugin {
 
     /**
      * Registers a callback function for a given event.
@@ -21,11 +21,6 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
      * @param Doku_Event_Handler $controller.
      */
     public function register(Doku_Event_Handler $controller) {
-        global $auth;
-        
-        if (!$auth || (get_class($auth) !== 'auth_plugin_authphpbb3')) {
-            return;
-        }
         $controller->register_hook('HTML_LOGINFORM_OUTPUT', 'BEFORE', $this, 'handle_login_form');
         $controller->register_hook('COMMON_USER_LINK', 'AFTER', $this, 'handle_user_link');
     }
@@ -47,9 +42,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         $elem = '';
         $pos = 0;
 
-        if (!$auth || (get_class($auth) !== 'auth_plugin_authphpbb3')) {
-            return;
-        }
+		if (!is_a($auth, 'auth_plugin_authphpbb3')) {
+			return;
+		}
         $phpbb_url = $auth->get_phpbb_url();
         if ($phpbb_url === false) {
             return ;
@@ -129,6 +124,9 @@ class action_plugin_authphpbb3 extends DokuWiki_Plugin {
         global $auth, $conf;
         $profile = '<a href="%s" class="interwiki iw_user" rel="nofollow" target="_blank">%s</a>';
 
+		if (!is_a($auth, 'auth_plugin_authphpbb3')) {
+			return;
+		}
         if (($conf['showuseras'] !== 'username_link') || $event->data['textonly']) {
             return ;
         }
