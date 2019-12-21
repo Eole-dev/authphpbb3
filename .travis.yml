@@ -1,5 +1,6 @@
 language: php
 php:
+  - "7.3"
   - "7.2"
   - "7.1"
   - "7.0"
@@ -9,4 +10,4 @@ env:
   - DOKUWIKI=stable
 before_install: wget https://raw.github.com/splitbrain/dokuwiki-travis/master/travis.sh && rm .gitignore
 install: sh travis.sh
-script: cd _test && phpunit --stderr --group plugin_authphpbb3
+script: cd _test && ./phpunit.phar --stderr --group plugin_authphpbb3
