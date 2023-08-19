@@ -6,6 +6,9 @@
  * @author   Eole <eole.dev@outlook.com>
  */
 
+use dokuwiki\Logger;
+use dokuwiki\Cache\Cache;
+
 if (!defined('DOKU_INC')) {
     die();
 }
@@ -119,7 +122,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         if ($class_name !== false) {
             $msg = $class_name . ': ' . $msg;
         }
-        dbglog($msg); 
+        Logger::debug($msg);
     }
 
     /**
@@ -254,7 +257,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
         }
         $this->_cache_duration = intval($this->getConf('phpbb_cache'));
         $depends = array('age' => self::CACHE_DURATION_UNIT * $this->_cache_duration);
-        $cache = new cache('authphpbb3_getUserData_' . $user, $this->_cache_ext_name);
+        $cache = new Cache('authphpbb3_getUserData_' . $user, $this->_cache_ext_name);
         $user_data = false;
 
         if (($this->_cache_duration > 0) && $cache->useCache($depends)) {
@@ -558,7 +561,7 @@ class auth_plugin_authphpbb3 extends DokuWiki_Auth_Plugin {
      */
     private function get_phpbb_cache() {
         if ($this->_cache === null) {
-            $this->_cache = new cache('authphpbb3', $this->_cache_ext_name);
+            $this->_cache = new Cache('authphpbb3', $this->_cache_ext_name);
         }
         return $this->_cache;
     }
